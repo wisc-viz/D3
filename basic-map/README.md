@@ -20,7 +20,7 @@ Everyone who showed up with their laptop and did this tutorial was using a Mac s
 This was the easy part because topojson is available as a package for [node.js](nodejs.org). Simply go to the node.js website and install node. Then open a terminal window and run the command `npm install -g topojson`.
 
 ##### Installing the GDAL
-This was more complicated. The tutorial tells you to use the [homebrew](brew.sh) package manager (specifically, `brew install GDAL`), and that worked for 2/3 of us. The rest struggled with the kind of nonsense you often see when trying to build software from source.
+This was more complicated. The tutorial tells you to use the [homebrew](brew.sh) package manager (specifically, `brew install gdal`), and that worked for 2/3 of us. The rest struggled with the kind of nonsense you often see when trying to build software from source.
 
 That's when we learned that Mac users have a nice shortcut: [a packaged installer for the GDAL](kyngchaos.com/software/frameworks) - scroll down to find the link for "GDAL complete".
 
