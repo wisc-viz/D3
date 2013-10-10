@@ -10,7 +10,7 @@ D3 is a javascript library for drawing svg pictures. It's key benefit is the abi
 ### Installing software
 This took up most of our time. Completing the tutorial requires two key pieces of software: the [Geospatial Data Abstraction Library (GDAL)](http://www.gdal.org), and [topojson](http://github.com/mbostock/topojson).
 
-The GDAL is used to translate from ESRI shapefiles (like you'd use in any GIS program) to GoeJSON, which is a compact text-based representation of shapes.
+The GDAL is used to translate from ESRI shapefiles (like you'd use in any GIS program) to GeoJSON, which is a compact text-based representation of shapes.
 
 Then, topojson translates the GeoJSON into topojson data, which is an even more compact text-based representaton of shapes, and is the format that we'll eventually send to the browser for drawing.
 
