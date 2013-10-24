@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+/* CSS goes here. */
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script>
+
+/* JavaScript goes here. */
+
+var width = 960,
+    height = 1160;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+function Is2010(complaint) {
+    return complaint.YEAR == "2010";
+}
+
+function CompareYear(year) {
+    return function(shiznaz) {
+        return shiznaz.YEAR == year;
+    }
+}
+
+var d, dd;
+
+
+
+d3.csv("wolf.csv", function(data) {
+    d = data;
+    dd = data.filter(CompareYear(2011));
+});
+
+
+</script>
