@@ -3,6 +3,26 @@
 <style>
 
 /* CSS goes here. */
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
 
 </style>
 <body>
@@ -14,17 +34,10 @@
 
 /* JavaScript goes here. */
 
-var width = 960,
-    height = 300;
+var margin = {top: 20, right: 20, bottom: 50, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-
-function Is2010(complaint) {
-    return complaint.YEAR == "2010";
-}
 
 function CompareYear(year) {
     return function(shiznaz) {
@@ -47,13 +60,73 @@ var scaley = d3.scale.linear()
                 .domain([0, 250])
                 .range([height, 0]);
 
+d3.format("0,000");
+
+var xAxis = d3.svg.axis()
+    .scale(scalex)
+    .tickFormat(d3.format("0000"))
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(scaley)
+    .orient("left");
+
+
+var line = d3.svg.line()
+    .x(function(d) { return scalex(d[0]); })
+    .y(function(d) { return scaley(d[1]); });
+    
+    
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    
 d3.csv("wolf.csv", function(data) {
     d = data;
-    dd = data.filter(CompareYear(2011));
     
-    for ( var i=2000; i<=2013; i++) { complaints.push(d.filter(CompareYear(i)).length); }
+    yy = d3.extent(data, function(z) { return z.YEAR; });
+    years = []
+    
+    for ( var i=yy[0]; i<=yy[1]; i++) { 
+        years.push(parseInt(i));
+        complaints.push(d.filter(CompareYear(i)).length);
+        }
     
     p = transpose([years, complaints]);
+    
+    
+    scalex.domain(d3.extent(p, function(z) { return z[0]; }));
+    scaley.domain(d3.extent(p, function(z) { return z[1]; }));
+    
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+     .append("text")
+      .attr("y", 45)
+      .attr("x", 300)
+      .attr("dx", ".71em")
+      .style("text-anchor", "end")
+      .text("years!!!");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("WOLVES!!!");
+    
+    svg.append("path")
+      .datum(p)
+      .attr("class", "line")
+      .attr("d", line);
+    
     
     svg.selectAll("circle")
       .data(p)
@@ -62,6 +135,8 @@ d3.csv("wolf.csv", function(data) {
       .attr("cx", function(q) {return scalex(q[0]);})
       .attr("cy", function(q) {return scaley(q[1]);})
       .attr("r", 5);
+      
+
 });
 
 

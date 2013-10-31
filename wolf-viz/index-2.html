@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.css" /> 
+<style>
+
+/* CSS goes here. */
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+.line {
+  fill: none;
+
+  stroke-width: 2px;
+}
+
+
+body {
+  font-family: Verdana,Arial,sans-serif;
+}
+
+h2 {
+    font-size: 1.2em;
+    margin: 60px 0 5px 0;
+}
+
+.wrapper div {
+    margin: 35px 0;
+}
+
+.wrapper {
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#slider7 {
+    height: 250px;
+}
+
+
+
+</style>
+<body>
+
+<div class="wrapper">
+  <h2>Slider with slide event: <span id="slider3text">0</span></h2>
+  <div id="slider3"></div>
+</div>
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.js"></script>
+<script>
+
+/* JavaScript goes here. */
+
+var width = 960,
+    height = 400,
+    padding = 20;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+var d, dd;
+
+function transpose(a)
+{
+  return Object.keys(a[0]).map(function (c) { return a.map(function (r) { return r[c]; }); });
+}
+
+function pooled(p, zbeta, zalpha, d, delta, EX){
+  return (d*Math.pow(zbeta,2) + (Math.pow(zalpha,2)*(d+delta*EX*(1-2*p)) + 2*zalpha*zbeta*Math.sqrt(d)*Math.sqrt(d+delta*EX*(1-2*p))))/(p*(1-p)*Math.pow(delta*EX,2));
+}
+
+function unpooled(p, zbeta, zalpha, d, delta, EX){
+  return (d*Math.pow(zbeta+zalpha,2) )/(p*(1-p)*Math.pow(delta*EX,2));
+}
+
+d3.select('#slider3').call(d3.slider().axis(true).min(0.01).max(0.03).step(0.005).value(0.01).on("slide", function(evt, value) {
+      d3.select('#slider3text').text(value);
+
+
+prob = [];
+size = [];
+usize = [];
+color = [];
+
+zbeta = 1.28;
+zalpha = 1.96;
+d = 0.046;
+delta = value; //0.02;
+EX = 1.5;
+npt = 100;
+for(k=0.1*npt; k <= 0.9*npt; k++){
+  prob.push(k/npt);
+  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+  color.push("green");
+}
+for(k=0.1*npt; k <= 0.9*npt; k++){
+  //prob.push(k/npt);
+  usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX)); 
+  color.push("red");     
+}
+p = transpose([prob, size]);
+u = transpose([prob, usize]);
+
+ymin = d3.min(p, function(q){return q[1];});
+ymax = d3.max(p, function(q){return q[1];});
+
+var scalex = d3.scale.linear()
+			  .domain([0, 1])
+			  .range([3*padding, width-3*padding]);
+
+var scaley = d3.scale.linear()
+			  .domain([ymin, ymax])
+			  .range([height-2*padding, 2*padding]);
+			  
+var xAxis = d3.svg.axis()
+			  .scale(scalex)
+			  .orient("bottom");
+			  
+var yAxis = d3.svg.axis()
+			  .scale(scaley)
+			  .orient("left")
+			  .ticks(5);
+
+var line = d3.svg.line()
+    		.x(function(d) { return scalex(d[0]); })
+		    .y(function(d) { return scaley(d[1]); });
+
+/*
+svg.selectAll("circle")
+	.data(p)
+	.enter()
+	.append("circle")
+	.attr("cx", function(q){return scalex(q[0]);})
+	.attr("cy", function(q){return scaley(q[1]);})
+	.attr("r", function(q){return 5;})
+	.attr("fill", function(q){return q[2];})
+	.on("mouseover", function() {
+		d3.select(this)
+			.attr("r", 7);})
+	.on("mouseout", function(d) {
+		d3.select(this)
+			.transition()
+			.duration(300)
+			.attr("r", 5);
+	});
+	*/
+/*
+svg.selectAll("circle")
+	.data(u)
+	.enter()
+	.append("circle")
+	.attr("cx", function(q){return scalex(q[0]);})
+	.attr("cy", function(q){return scaley(q[1]);})
+	.attr("r", function(q){return 5;})
+	.attr("fill", "red");
+ */
+svg.append("g")
+  .attr("class", "axis")
+  .attr("transform", "translate(0," + (height-padding) + ")")
+  .call(xAxis);
+  
+svg.append("g")
+	.attr("class", "axis")
+	.attr("transform", "translate(" + 3*padding + ",0)")
+	.call(yAxis)
+	    .append("text")
+      //.attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Subjects");
+
+svg.append("path")
+	.datum(p)
+	.attr("class", "line")
+	.attr("d", line)
+	.attr("stroke", "red")
+		.on("mouseover", function() {
+		d3.select(this)
+			.attr("stroke", "orange");})
+	.on("mouseout", function(d) {
+		d3.select(this)
+			.attr("stroke", "red");});
+	
+svg.append("path")
+	.datum(u)
+	.attr("class", "line")
+	.attr("d", line)
+	.attr("stroke", "blue")
+			.on("mouseover", function() {
+		d3.select(this)
+			.attr("stroke", "orange");})
+	.on("mouseout", function(d) {
+		d3.select(this)
+			.attr("stroke", "blue");});
+    }));
+
+</script>
