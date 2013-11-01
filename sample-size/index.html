@@ -140,6 +140,11 @@ var line = d3.svg.line()
     		.x(function(d) { return scalex(d[0]); })
 		    .y(function(d) { return scaley(d[1]); });
 
+
+svg.selectAll("g.axis").data([]).exit().remove()
+svg.selectAll("path.line").data([]).exit().remove()
+
+
 /*
 svg.selectAll("circle")
 	.data(p)
