@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+/* CSS goes here. */
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script>
+
+var width=1200, height=600;
+var boxw=1, boxh=20;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    
+var d, play_names, counts=[];
+
+function Compare(match, part) {
+    return function(shiznaz) {
+        return shiznaz[part] == match;
+    }
+}
+
+
+d3.csv("data/shakespearect-Folio.csv", function(data) {
+    play_names = d3.set(data.map(function(x) {return x.play})).values();
+
+    d=data.filter(Compare('1KingHenry4', 'play')).slice(0,1200);
+    
+    for (var i=0; i<d.length; i++) {
+        counts.push([i, data.filter(Compare(d[i].word, 'word')).length]);
+    }
+       
+    var xrange = [0,36]
+   
+    var color_scale = d3.scale.linear()
+      .domain(xrange)
+      .range(['rgb(255,255,255)', 'rgb(44, 162, 95)']);
+
+    svg.selectAll('rect')
+      .data(counts)
+      .enter()
+      .append('rect')
+        .attr('width', boxw)
+        .attr('height', boxh)
+        .attr('x', function(item) {return item[0]*boxw})
+        .attr('y', boxh)
+        .attr('fill', function(item) {return color_scale(item[1])});
+});
+
+</script>
