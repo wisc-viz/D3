@@ -8,8 +8,9 @@
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="http://mbostock.github.com/stack/stack.v0.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="point-in-polygon.js"></script>
 <script src="highlight.v0.js"></script>
 
@@ -141,7 +142,7 @@
         .attr("class", function (d) { return d['d.id']; });
     }
 </script>
-<script src="../js/lasso-tool.js"></script>
+<script src="lasso-tool.js"></script>
 <script type="text/javascript"> 
     $("#heatmap")
       .lasso()
