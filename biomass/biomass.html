@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+/* CSS goes here. */
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+
+<script src="http://mbostock.github.com/stack/stack.v0.js"></script>
+<script src="point-in-polygon.js"></script>
+<script src="highlight.v0.js"></script>
+
+<script type="text/javascript">
+    //height of each row in the heatmap
+    //width of each column in the heatmap
+    var gridSize = 8,
+      h = gridSize,
+      w = gridSize,
+      rectPadding = 0;
+        
+    var margin = {top: 20, right: 15, bottom: 60, left: 15};
+    var width = 580 - margin.left - margin.right;
+    var height = 580 - margin.top - margin.bottom;
+
+    var area = d3.select("#oaks-raw").append("div")
+      .attr("width", 2000)//2*(width + margin.left + margin.right))
+      .attr("height", 2000); //2*(height + margin.top + margin.bottom));
+
+    var heatmap_area = area.append('div')
+	  .attr('width', width + margin.left + margin.right)
+	  .attr('height', height + margin.top + margin.bottom)
+	  .style('display', 'inline-block')
+      .attr('id', 'heatmap');
+
+	var heatmap = heatmap_area.append('svg')
+   	  .attr('width', width)
+   	  .attr('height', height)
+	  .attr('viewBox', "0,0," + String(width) + ", " + String(height))
+
+    var scatter_area = area.append('div')
+	  .attr('width', width + margin.left + margin.right)
+	  .attr('height', height + margin.top + margin.bottom)
+	  .style('display', 'inline-block')
+      .attr('id', 'scatterplot');
+
+    var scatter = scatter_area.append('svg')
+      .attr('transform', 'translate(' + String(margin.left) +',' + String(margin.top) +')')
+      .attr('width', width)
+   	  .attr('height', height)
+   	  .attr('fill', 'white')
+   	  .attr("preserveAspectRatio", "none")
+      .attr('viewBox', "0,0," + String(width) + ", " + String(height));
+
+    queue().defer(d3.csv, "oakdata.csv")
+      .await(ready);
+
+    var oaks, xx, yy, xAx, yAx, colorScale;
+    xx=[244000, 724000];
+    yy=[668000, 1196000];
+    function ready(error, data) {
+      oaks = data;
+      var min=Infinity;
+      var max=-Infinity;
+      for(var i=0; i<data.length; i++) {
+        var val = parseFloat(data[i].logbiomass);
+        data[i].logbiomass = val;
+        if(val<min) min=val;
+        if(val>max) max=val;
+      }
+
+      for(var i=0; i<data.length; i++) {
+        var d = data[i];
+        d.id = parseInt(d.id);
+        d['t1.loc'] = parseFloat(d['t1.loc']);
+        d['t1.scale'] = parseFloat(d['t1.scale']);
+        d['t2.loc'] = parseFloat(d['t2.loc']);
+        d['t2.scale'] = parseFloat(d['t2.scale']);
+        d['t2.pz'] = parseFloat(d['t2.pz']);
+        d['d.pz'] = parseFloat(d['d.pz']);
+        d.x = (parseFloat(d.x)-xx[0]) * 60 * w / (xx[1]-xx[0]);
+        d.y = height-(parseFloat(d.y)-yy[0]) * 60 * h / (yy[1]-yy[0]);
+      }
+
+      colorScale = d3.scale.linear()
+        .domain([min, max])
+        .range(['white', 'red']);
+        
+      var heatMap = heatmap.selectAll("#heatmap")
+        .data(data, function(d) { return d.x + ':' + d.y; })
+        .enter().append("svg:rect")
+        .attr("x", function(d) { return d.x; })
+        .attr("y", function(d) { return d.y; })
+        .attr("width", function(d) { return w; })
+        .attr("height", function(d) { return h; })
+        .style("fill", function(d) { return colorScale(parseFloat(d.logbiomass));});
+
+    xAx = d3.scale.linear()
+      .domain([d3.min(data, function(d) { return 0.8*d['t2.pz']; }), d3.max(data, function(d) { return 1.2*d['t2.pz']; })])
+      .range([ 0, width ]);
+    
+    yAx = d3.scale.linear()
+      .domain([d3.min(data, function(d) { return d['d.pz']; }), d3.max(data, function(d) { return d['d.pz']; })])
+      .range([ height, 0 ]);
+
+    // draw the x axis
+    var xAxis = d3.svg.axis()
+	  .scale(xAx)
+	  .orient('bottom')
+	  .ticks(5);
+
+    scatter.append('g')
+	  .attr('transform', 'translate(0,' + (height - 2*margin.top) + ')')
+	  .attr('class', 'axis')
+	  .call(xAxis)
+	  .selectAll("text")
+	    .style('font-size', '0.5em');
+
+    // draw the y axis
+    var yAxis = d3.svg.axis()
+	  .scale(yAx)
+	  .orient('left')
+	  .ticks(5);
+
+    scatter.append('g')
+	  .attr('transform', 'translate(' + 3*margin.left + ',0)')
+	  .attr('class', 'axis')
+	  .attr('width', margin.left)
+	  .call(yAxis)
+	  .selectAll("text")
+	    .style('font-size', '0.5em');
+
+    scatter.selectAll("dots")
+      .data(data)
+      .enter().append("svg:circle")
+        .attr("cx", function (d,i) { return xAx(d['t2.pz']); })
+        .attr("cy", function (d) { return yAx(d['d.pz']); })
+        .attr("r", 2)
+        .attr("class", function (d) { return d['d.id']; });
+    }
+</script>
+<script src="../js/lasso-tool.js"></script>
+<script type="text/javascript"> 
+    $("#heatmap")
+      .lasso()
+      .on("lassoDone", function(e, lassoPoints) {
+        //Identify which points were circled
+        cells = heatmap.selectAll("rect")[0];
+        var circles = scatter.selectAll("circle")[0];
+        for(var i=0; i<oaks.length; i++) {
+          if(pip(oaks[i], lassoPoints, xind='x', yind='y')) {
+            d3.select(circles[i]).style("fill", "red");
+            d3.select(cells[i]).style("fill", "green");
+          }
+          else {
+            d3.select(circles[i]).style("fill", "white");
+            d3.select(cells[i]).style("fill", isNaN(cells[i].__data__.logbiomass) ? 'black' : colorScale(cells[i].__data__.logbiomass));
+          }
+        }
+      }
+    );
+    
+    var objs, cells, points, path;
+    $("#scatterplot")
+      .lasso()
+      .on("lassoDone", function(e, lassoPoints) {
+        //Identify which points were circled
+        objs = [];
+        cells = heatmap.selectAll("rect")[0];
+        points = scatter.selectAll("circle")[0];
+        path = lassoPoints;
+        /*for(var j=0; j<path.length; j++) {
+          path[j][0] = d3.select(points[i]).attr("cx");
+          path[j][1] = d3.select(points[i]).attr("cx");
+        }*/
+        
+        for(var i=0; i<points.length; i++) {
+          var pt = {
+            x: parseFloat(d3.select(points[i]).attr("cx")),
+            y: parseFloat(d3.select(points[i]).attr("cy"))
+          }
+          if(pip(pt, path)) {
+            d3.select(cells[i]).style("fill", "green");
+            d3.select(points[i]).style("fill", "green");
+            objs.push(cells[i]);
+          }
+          else {
+            d3.select(cells[i]).style("fill", isNaN(cells[i].__data__.logbiomass) ? 'black' : colorScale(cells[i].__data__.logbiomass));
+            d3.select(points[i]).style("fill", "white");
+          }
+        }
+      }
+    );
+</script>
+
+
+</script>

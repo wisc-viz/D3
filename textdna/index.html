@@ -11,15 +11,16 @@
 <script src="http://underscorejs.org/underscore-min.js"></script>
 <script>
 
-var width=1200, height=120;
+var width=1200, height=120, tcWidth=600;
 var boxw=3, boxh=20;
+var countslice = [0, 400]
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height)
     
 var svg2 = d3.select("body").append("svg")
-    .attr("width", width)
+    .attr("width", tcWidth)
     .attr("height", height)
     
 var d, play_names, counts=[], thundercats=[];
@@ -30,7 +31,13 @@ function Compare(match, part) {
     }
 }
 
-
+var xScaleCounts = d3.scale.ordinal()
+    .domain(d3.range(countslice[1] - countslice[0]))
+    .rangeRoundBands([0,width],0)
+    
+var xScaleThundercats = d3.scale.ordinal()
+    .domain(d3.range(countslice[1] - countslice[0]))
+    .rangeRoundBands([0,tcWidth],0)
 
 d3.csv("data/shakespearect-Folio.csv", function(data) {
     play_names = d3.set(data.map(function(x) {return x.play})).values();
@@ -38,7 +45,7 @@ d3.csv("data/shakespearect-Folio.csv", function(data) {
     for (var j=0; j<5; j++) { 
         pname =  play_names[j];
         console.log(pname);
-        d = data.filter(Compare(pname, 'play')).slice(0,400);
+        d = data.filter(Compare(pname, 'play')).slice(countslice);
     
         for (var i=0; i<d.length; i++) {
             counts.push([i, data.filter(Compare(d[i].word, 'word')).length, d[i].word, j, pname]);
@@ -56,9 +63,9 @@ d3.csv("data/shakespearect-Folio.csv", function(data) {
       .enter()
       .append('rect')
         .attr('class', function(item) { return item[2] })
-        .attr('width', boxw)
+        .attr('width', xScaleCounts.rangeBand())
         .attr('height', boxh)
-        .attr('x', function(item) {return item[0]*boxw})
+        .attr('x', function(item, indx) {return item[0]*boxw})
         .attr('y', function(item) {return item[3]*(boxh+5)})
         .attr('fill', function(item) {return color_scale(item[1])})
         .attr('oldfill', function(item) {return color_scale(item[1])})
@@ -70,7 +77,7 @@ d3.csv("data/shakespearect-Folio.csv", function(data) {
         .on('mouseout', function() {
             console.log(this)
             var word = d3.select(this);
-            d3.selectAll("." + word.attr('class')).attr('fill', word.attr('oldfill'))
+            d3.selectAll("." + word.attr('class')).transition().duration(150).attr('fill', word.attr('oldfill'))
         });
         
     d = data.filter(Compare('1KingHenry4', 'play')).slice(0,400);
@@ -80,18 +87,14 @@ d3.csv("data/shakespearect-Folio.csv", function(data) {
     
     thundercats = thundercats.sort(function(a,b) {return b[1] - a[1]})
     
-    for (var i=0; i<thundercats.length; i++) {
-        thundercats[i].push(i);
-    }
-    
     svg2.selectAll('rect')
       .data(thundercats)
       .enter()
       .append('rect')
         .attr('class', function(item) { return item[2] })
-        .attr('width', 1)
+        .attr('width', xScaleThundercats.rangeBand())
         .attr('height', function(item) { return 5*item[1] })
-        .attr('x', function(item) {return item[3]})
+        .attr('x', function(item, indx) {return xScaleThundercats(indx)})
         .attr('y', function(item) {return 36*5 - 5*item[1]})
         .attr('fill', function(item) {return color_scale(item[1])})
         .attr('oldfill', function(item) {return color_scale(item[1])})
@@ -103,7 +106,7 @@ d3.csv("data/shakespearect-Folio.csv", function(data) {
         .on('mouseout', function() {
             console.log(this)
             var word = d3.select(this);
-            d3.selectAll("." + word.attr('class')).attr('fill', word.attr('oldfill'))
+            d3.selectAll("." + word.attr('class')).transition().duration(150).attr('fill', word.attr('oldfill'))
         });
 });
 
