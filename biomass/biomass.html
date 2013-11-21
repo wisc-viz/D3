@@ -3,9 +3,15 @@
 <style>
 
 /* CSS goes here. */
+body{
+background-color:'black'
+}
 
 </style>
 <body>
+
+<div id='oaks-raw'></div>
+
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -51,7 +57,7 @@
       .attr('transform', 'translate(' + String(margin.left) +',' + String(margin.top) +')')
       .attr('width', width)
    	  .attr('height', height)
-   	  .attr('fill', 'white')
+   	  .attr('fill', 'black')
    	  .attr("preserveAspectRatio", "none")
       .attr('viewBox', "0,0," + String(width) + ", " + String(height));
 
@@ -156,7 +162,7 @@
             d3.select(cells[i]).style("fill", "green");
           }
           else {
-            d3.select(circles[i]).style("fill", "white");
+            d3.select(circles[i]).style("fill", "black");
             d3.select(cells[i]).style("fill", isNaN(cells[i].__data__.logbiomass) ? 'black' : colorScale(cells[i].__data__.logbiomass));
           }
         }
@@ -189,7 +195,7 @@
           }
           else {
             d3.select(cells[i]).style("fill", isNaN(cells[i].__data__.logbiomass) ? 'black' : colorScale(cells[i].__data__.logbiomass));
-            d3.select(points[i]).style("fill", "white");
+            d3.select(points[i]).style("fill", "black");
           }
         }
       }
