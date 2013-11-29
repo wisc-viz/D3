@@ -159,6 +159,7 @@ function unpooled(p, zbeta, zalpha, d, delta, EX){
 
 function draw(){
 
+
 d3.selectAll("path").remove();
 d3.selectAll("circle").remove();
 d3.selectAll("text").remove();
@@ -170,6 +171,13 @@ d3.select('#left_col')
 	delta = parseFloat(document.getElementById("delta").value);
 	d = parseFloat(document.getElementById("eventprob").value);
 	EX = parseFloat(document.getElementById("followup").value);
+
+
+// FOR TESTING, COMMENT OUT!!!	
+	EX = 0.5;
+d = 0.5;
+delta = 0.5;
+
 	
 EXmin = Math.floor(100*0.5*EX)/100;
 EXmax = Math.floor(100*1.5*EX)/100;
@@ -237,12 +245,13 @@ var line = d3.svg.line()
 
 svg.append("g")
   .attr("class", "x axis")
-  .attr("transform", "translate(0," + (height-padding) + ")")
+  .attr("transform", "translate(0," + (height-1.7*padding) + ")")
   .call(xAxis)
   .append("text")
-  .attr("x", 6)
+  .attr("x", 750)
+  .attr("y", 32)
   .attr("dx", ".71em")
-	.style("text-anchor", "end")
+	.style("text-anchor", "middle")
   .text("Probability of Allocation to Experimental Group");
   
 svg.append("g")
@@ -347,7 +356,7 @@ scaley.domain(ydomain);
 
 unscaley.range(ydomain);
 
-pathp.datum(p).transition().duration(500).attr("d", line);
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
@@ -392,7 +401,7 @@ scaley.domain(ydomain);
 
 unscaley.range(ydomain);
 
-pathp.datum(p).transition().duration(500).attr("d", line);
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
@@ -440,7 +449,7 @@ scaley.domain(ydomain);
 
 unscaley.range(ydomain);
 
-pathp.datum(p).transition().duration(500).attr("d", line);
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
@@ -453,6 +462,7 @@ svg.select(".y.axis")
 }));
 
 });
+
 }
 
 
