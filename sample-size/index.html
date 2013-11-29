@@ -33,11 +33,11 @@ h2 {
 }
 
 .wrapper div {
-    margin: 35px 0;
+    margin: 10px 0;
 }
 
 .wrapper {
-  width: 150px; 
+  width: 250px; 
   margin-left: 0px;
   margin-right: auto;
 }
@@ -46,19 +46,21 @@ h2 {
     height: 250px;
 }
 
-#wrap {
+#topbar {
 	float:left;
-   width:1100px;
+   width:1150px;
    margin-left: 10px;
    margin-right: 0px;
 }
 #left_col {
    float:left;
    width:900px;
+   height:450px;
 }
 #right_col {
    float:right;
-   width:200px;
+   width:250px;
+   height:450px;
 }
 
 
@@ -87,23 +89,42 @@ h2 {
         font-size: 16px;
         line-height: 20px;
 }
+#warning{
+	display:none;
+	margin-left:auto;
+	margin-right:auto;
+}
 
+#type1menu{
+	width:125px;
+	float:left;
+}
+
+#powermenu{
+	width:125px;
+	float:right;
+}
 </style>
 <body>
+<div id="header">
+<h1 style="margin-bottom:10;">Sample Size Calculator for Additive Hazards Model</h1></div>
+<div id="container" style="width:1150px">
 
 <div id="tooltip" class="hidden">
-        <p><span id="value">100</span></p>
+        <p><span id="pvalue">100</span></p>
+        <p><span id="nvalue">100</span></p>
 </div>
 
-<div id="wrap">
+<div id="topbar">
 
-  Non-Inferiority Margin: <input type="text" name="delta" id="delta">
+  Margin or Hazard Difference: <input type="text" name="delta" id="delta">
   Event Probability: <input type="text" name="eventprob" id="eventprob">
   Expected Follow-up Time: <input type="text" name="followup" id="followup">
-  <input type="button" value="Calculate" name="subbutton" onclick="draw()">
 </div>
 <div id="right_col">
-One-Sided<br>Type 1 Error: <form action="">
+
+<div id="type1menu" style="float:left" "width:125px">
+Type 1 Error: <form action="">
 <select name="type1" id="type1">
 <option value=2.326348>0.01</option>
 <option value=1.959964 selected>0.025</option>
@@ -111,7 +132,9 @@ One-Sided<br>Type 1 Error: <form action="">
 <option value=1.281552>0.1</option>
 </select>
 </form>
+</div>
 
+<div id="powermenu" style="float:right" style="width:125px">
 Power:
 <form action="">
 <select name="power" id="power">
@@ -120,27 +143,46 @@ Power:
 <option value=1.644854>0.95</option>
 </select>
 </form>
+<br>
+</div>
+
+<div id="trialmenu"  style="width:250px">
+Trial Type:
+<form action="">
+<select name="trial" id="trial">
+<option value="noninf" selected>Non-Inferiority</option>
+<option value="sup">Superiority</option>
+</select>
+</form>
+</div>
+<div style="margin:10px 0px 5px">
+  <input type="button" value="Calculate" name="subbutton" onclick="draw()">
+</div>
 <div class="wrapper">
 <br>
-  Non-inferiority<br> Margin: <span id="sliderdeltatext"></span>
+  Margin or Difference: <span id="sliderdeltatext"></span>
   <div id="sliderdelta"></div>
 </div>
 
 <div class="wrapper">
-  Event<br> Probability: <span id="sliderdtext"></span>
+  Event Probability: <span id="sliderdtext"></span>
   <div id="sliderd"></div>
 </div>
 
 <div class="wrapper">
-  Expected <br>Follow-up: <span id="sliderEXtext"></span>
+  Expected Follow-up: <span id="sliderEXtext"></span>
   <div id="sliderEX"></div>
 </div>
 </div>
 
 <div id="left_col"></div>
 
+<div id="warning">
+ <p><textarea rows="2" cols="100" id="wtext"></textarea></p>
+</div>
 
 
+</div>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://underscorejs.org/underscore-min.js"></script>
 <script src="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.js"></script>
@@ -152,7 +194,7 @@ var width = 900,
     height = 450,
     padding = 20;
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#left_col").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -160,7 +202,7 @@ var d, dd;
 
 var lineData;
 
-var type1;
+var type1, power, trialtype;
 
 function transpose(a)
 {
@@ -177,7 +219,12 @@ function unpooled(p, zbeta, zalpha, d, delta, EX){
   return (d*Math.pow(zbeta+zalpha,2) )/(p*(1-p)*Math.pow(delta*EX,2));
 }
 
-
+function checknan(p){
+	if(isNaN(p[p.length-1][1])){
+		d3.select("#warning").style("display", "inline");
+		d3.select("#wtext").text("Warning: some values above p=0.5 produce imaginary numbers")
+	}
+}
 function draw(){
 
 
@@ -186,6 +233,7 @@ d3.selectAll("circle").remove();
 d3.selectAll("text").remove();
 d3.selectAll("g").remove();
 d3.selectAll("a").remove();
+d3.select("#warning").style("display", "none");
 
 d3.select('#left_col')
 	.call( function(){
@@ -193,8 +241,17 @@ d3.select('#left_col')
 	d = parseFloat(document.getElementById("eventprob").value);
 	EX = parseFloat(document.getElementById("followup").value);
 
+
 zalpha = parseFloat(document.getElementById("type1").value);
 zbeta = parseFloat(document.getElementById("power").value);
+
+trialtype = document.getElementById("trial").value;
+
+if(d > 1){
+	d3.select("#warning").style("display", "inline");
+	d3.select("#wtext").text("Warning: Event Probability must be between 0 and 1, setting equal to 1");
+	d = 1;
+}
 
 
 // FOR TESTING, COMMENT OUT!!!	
@@ -220,7 +277,11 @@ usize = [];
 npt = 100;
 for(k=0.1*npt; k <= 0.9*npt; k++){
   prob.push(k/npt);
-  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+  if(trialtype=="noninf"){
+	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	}else{
+		size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+	}
 }
 for(k=0.1*npt; k <= 0.9*npt; k++){
   //prob.push(k/npt);
@@ -228,6 +289,8 @@ for(k=0.1*npt; k <= 0.9*npt; k++){
 }
 p = transpose([prob, size]);
 //u = transpose([prob, usize]);
+
+checknan(p);
 smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
@@ -305,11 +368,17 @@ var pathp = svg.append("path")
 					var mousepoz = d3.mouse(this);
 					
 					d3.select("#tooltip")
- 					 .style("left", mousepoz[0] + "px")
-					  .style("top", mousepoz[1]-10 + "px")
-					  .select("#value")
-					  .text(Math.ceil(100*unscalex(mousepoz[0]))/100 + ", " + Math.ceil(unscaley(mousepoz[1])));
+ 					 .style("left", mousepoz[0]+5 + "px")
+					  .style("top", mousepoz[1]-40 + "px")
+					  .select("#pvalue")
+					  .text("p= " + Math.ceil(100*unscalex(mousepoz[0]))/100)
 
+					d3.select("#tooltip")
+					  .select("#nvalue")
+					  .text("n= " + Math.ceil(unscaley(mousepoz[1])));
+					
+					
+					  
 					//Show the tooltip
 					d3.select("#tooltip").classed("hidden", false);
 					
@@ -375,6 +444,7 @@ d3.select('#sliderdelta')
 			.value(delta)
 			.on("slide", function(evt, value) {
       d3.select('#sliderdeltatext').text(Math.floor(value*1000)/1000);
+	d3.select("#warning").style("display", "none");
 
 	delta = Math.floor(value*1000)/1000; //0.02;
 	npt = 100;
@@ -383,7 +453,11 @@ d3.select('#sliderdelta')
 	usize = [];
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  prob.push(k/npt);
-	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	  if(trialtype=="noninf"){
+		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}else{
+			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
@@ -401,7 +475,7 @@ unscaley.range(ydomain);
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
-
+checknan(p);
 svg.select(".y.axis")
     .transition()
     .duration(500)
@@ -420,7 +494,7 @@ d3.select('#sliderd')
 			.value(d)
 			.on("slide", function(evt, value) {
       d3.select('#sliderdtext').text(Math.floor(value*1000)/1000);
-
+	d3.select("#warning").style("display", "none");
 	d = Math.floor(value*1000)/1000; //0.02;
 	npt = 100;
 	prob = [];
@@ -428,7 +502,11 @@ d3.select('#sliderd')
 	usize = [];
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  prob.push(k/npt);
-	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	  if(trialtype=="noninf"){
+		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}else{
+			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
@@ -444,7 +522,7 @@ scaley.domain(ydomain);
 unscaley.range(ydomain);
 
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
-
+checknan(p);
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
 
@@ -468,6 +546,7 @@ d3.select('#sliderEX')
 			
 			.on("slide", function(evt, value) {
       d3.select('#sliderEXtext').text(Math.floor(100*value)/100);
+	d3.select("#warning").style("display", "none");
 
 	EX = value;
 	npt = 100;
@@ -476,7 +555,11 @@ d3.select('#sliderEX')
 	usize = [];
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  prob.push(k/npt);
-	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	  if(trialtype=="noninf"){
+		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}else{
+			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		}
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
 	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
@@ -495,7 +578,7 @@ pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
-
+checknan(p);
 svg.select(".y.axis")
     .transition()
     .duration(500)
