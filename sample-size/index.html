@@ -47,9 +47,10 @@ h2 {
 }
 
 #wrap {
-	//float:left;
+	float:left;
    width:1100px;
-   margin:0 auto;
+   margin-left: 10px;
+   margin-right: 0px;
 }
 #left_col {
    float:left;
@@ -100,7 +101,7 @@ h2 {
   Event Probability: <input type="text" name="eventprob" id="eventprob">
   Expected Follow-up Time: <input type="text" name="followup" id="followup">
   <input type="button" value="Calculate" name="subbutton" onclick="draw()">
-
+</div>
 <div id="right_col">
 One-Sided<br>Type 1 Error: <form action="">
 <select name="type1" id="type1">
@@ -138,7 +139,7 @@ Power:
 
 <div id="left_col"></div>
 
-</div>
+
 
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://underscorejs.org/underscore-min.js"></script>
@@ -262,7 +263,8 @@ var yAxis = d3.svg.axis()
 
 var line = d3.svg.line()
                     .x(function(d) { return scalex(d[0]); })
-                    .y(function(d) { return scaley(d[1]); });
+                    .y(function(d) { return scaley(d[1]); })
+                    .interpolate("linear");
 var drawcoords = d3.svg.line()
 					.x(function(d) {return d[0]})
 					.y(function(d) {return d[1]})
