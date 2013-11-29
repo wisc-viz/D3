@@ -37,7 +37,7 @@ h2 {
 }
 
 .wrapper {
-  width: 200px; 
+  width: 150px; 
   margin-left: 0px;
   margin-right: auto;
 }
@@ -47,6 +47,7 @@ h2 {
 }
 
 #wrap {
+	//float:left;
    width:1100px;
    margin:0 auto;
 }
@@ -100,8 +101,24 @@ h2 {
   Expected Follow-up Time: <input type="text" name="followup" id="followup">
   <input type="button" value="Calculate" name="subbutton" onclick="draw()">
 
-
 <div id="right_col">
+One-Sided<br>Type 1 Error: <form action="">
+<select name="type1" id="type1">
+<option value=2.326348>0.01</option>
+<option value=1.959964 selected>0.025</option>
+<option value=1.644854>0.05</option>
+<option value=1.281552>0.1</option>
+</select>
+</form>
+
+Power:
+<form action="">
+<select name="power" id="power">
+<option value=0.8416212>0.8</option>
+<option value=1.281552 selected>0.9</option>
+<option value=1.644854>0.95</option>
+</select>
+</form>
 <div class="wrapper">
 <br>
   Non-inferiority<br> Margin: <span id="sliderdeltatext"></span>
@@ -131,17 +148,18 @@ h2 {
 /* JavaScript goes here. */
 
 var width = 900,
-    height = 400,
+    height = 450,
     padding = 20;
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-
 var d, dd;
 
 var lineData;
+
+var type1;
 
 function transpose(a)
 {
@@ -174,6 +192,9 @@ d3.select('#left_col')
 	d = parseFloat(document.getElementById("eventprob").value);
 	EX = parseFloat(document.getElementById("followup").value);
 
+zalpha = parseFloat(document.getElementById("type1").value);
+zbeta = parseFloat(document.getElementById("power").value);
+
 
 // FOR TESTING, COMMENT OUT!!!	
 //	EX = 0.5;
@@ -185,6 +206,7 @@ EXmin = Math.floor(100*0.5*EX)/100;
 EXmax = Math.floor(100*1.5*EX)/100;
 dmin = Math.floor(1000*0.5*d)/1000;
 dmax = Math.floor(1000*1.5*d)/1000;
+dmax = Math.min(dmax, 1);
 deltamin = Math.floor(1000*0.5*delta)/1000;
 deltamax = Math.floor(1000*1.5*delta)/1000;	
 
@@ -193,8 +215,6 @@ size = [];
 usize = [];
 
 	
-zbeta = 1.28;
-zalpha = 1.96;
 
 npt = 100;
 for(k=0.1*npt; k <= 0.9*npt; k++){
