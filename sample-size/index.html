@@ -193,10 +193,10 @@ for(k=0.1*npt; k <= 0.9*npt; k++){
 }
 for(k=0.1*npt; k <= 0.9*npt; k++){
   //prob.push(k/npt);
-  usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));    
+  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));    
 }
 p = transpose([prob, size]);
-u = transpose([prob, usize]);
+//u = transpose([prob, usize]);
 smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
@@ -238,7 +238,12 @@ var line = d3.svg.line()
 svg.append("g")
   .attr("class", "x axis")
   .attr("transform", "translate(0," + (height-padding) + ")")
-  .call(xAxis);
+  .call(xAxis)
+  .append("text")
+  .attr("x", 6)
+  .attr("dx", ".71em")
+	.style("text-anchor", "end")
+  .text("Probability of Allocation to Experimental Group");
   
 svg.append("g")
         .attr("class", "y axis")
@@ -280,7 +285,7 @@ var pathp = svg.append("path")
                 d3.select("#tooltip").classed("hidden", true);
 
                 });
-    
+/*    
 var pathu = svg.append("path")
         .datum(u)
         .attr("class", "line")
@@ -305,8 +310,9 @@ var pathu = svg.append("path")
                 d3.select(this)
                         .attr("stroke", "blue");
                 d3.select("#tooltip").classed("hidden", true);
+                
 });
-                        
+*/                        
 
 d3.select('#sliderdelta')
 	.call( delslide = d3.slider()
@@ -329,10 +335,10 @@ d3.select('#sliderdelta')
 	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
+	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
 	}
 	p = transpose([prob, size]);
-	u = transpose([prob, usize]);
+	//u = transpose([prob, usize]);
 smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
@@ -343,7 +349,7 @@ unscaley.range(ydomain);
 
 pathp.datum(p).transition().duration(500).attr("d", line);
 
-pathu.datum(u).transition().duration(500).attr("d", line);
+//pathu.datum(u).transition().duration(500).attr("d", line);
 
 svg.select(".y.axis")
     .transition()
@@ -374,10 +380,10 @@ d3.select('#sliderd')
 	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
+	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
 	}
 	p = transpose([prob, size]);
-	u = transpose([prob, usize]);
+	//u = transpose([prob, usize]);
 smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
@@ -388,7 +394,7 @@ unscaley.range(ydomain);
 
 pathp.datum(p).transition().duration(500).attr("d", line);
 
-pathu.datum(u).transition().duration(500).attr("d", line);
+//pathu.datum(u).transition().duration(500).attr("d", line);
 
 
 svg.select(".y.axis")
@@ -422,10 +428,10 @@ d3.select('#sliderEX')
 	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
 	}
 	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
+	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
 	}
 	p = transpose([prob, size]);
-	u = transpose([prob, usize]);
+	//u = transpose([prob, usize]);
 smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
@@ -436,7 +442,7 @@ unscaley.range(ydomain);
 
 pathp.datum(p).transition().duration(500).attr("d", line);
 
-pathu.datum(u).transition().duration(500).attr("d", line);
+//pathu.datum(u).transition().duration(500).attr("d", line);
 
 
 svg.select(".y.axis")
