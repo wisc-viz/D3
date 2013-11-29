@@ -107,7 +107,9 @@ h2 {
 </style>
 <body>
 <div id="header">
-<h1 style="margin-bottom:10;">Sample Size Calculator for Additive Hazards Model</h1></div>
+<h1 style="margin-bottom:10">Sample Size Calculator for Additive Hazards Model</h1></div>
+
+
 <div id="container" style="width:1150px">
 
 <div id="tooltip" class="hidden">
@@ -369,7 +371,7 @@ var pathp = svg.append("path")
 					
 					d3.select("#tooltip")
  					 .style("left", mousepoz[0]+5 + "px")
-					  .style("top", mousepoz[1]-40 + "px")
+					  .style("top", mousepoz[1]+30 + "px")
 					  .select("#pvalue")
 					  .text("p= " + Math.ceil(100*unscalex(mousepoz[0]))/100)
 
@@ -474,6 +476,8 @@ unscaley.range(ydomain);
 
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
+document.getElementById("delta").value = delta;
+
 //pathu.datum(u).transition().duration(500).attr("d", line);
 checknan(p);
 svg.select(".y.axis")
@@ -525,6 +529,7 @@ pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 checknan(p);
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
+document.getElementById("eventprob").value = d;
 
 svg.select(".y.axis")
     .transition()
@@ -577,6 +582,8 @@ unscaley.range(ydomain);
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
 //pathu.datum(u).transition().duration(500).attr("d", line);
+
+document.getElementById("followup").value = Math.floor(100*EX)/100;
 
 checknan(p);
 svg.select(".y.axis")
