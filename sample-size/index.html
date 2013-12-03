@@ -369,15 +369,24 @@ var pathp = svg.append("path")
                         
 					var mousepoz = d3.mouse(this);
 					
+					var ptool = Math.ceil(100*unscalex(mousepoz[0]))/100
+					
 					d3.select("#tooltip")
  					 .style("left", mousepoz[0]+5 + "px")
 					  .style("top", mousepoz[1]+30 + "px")
 					  .select("#pvalue")
-					  .text("p= " + Math.ceil(100*unscalex(mousepoz[0]))/100)
+					  .text("p= " + ptool)
+
+					var ntool;
+ 					if(trialtype=="noninf"){
+						ntool = pooled(ptool, zbeta, zalpha, d, delta, EX);
+					}else{
+						ntool = unpooled(ptool, zbeta, zalpha, d, delta, EX);
+					}
 
 					d3.select("#tooltip")
 					  .select("#nvalue")
-					  .text("n= " + Math.ceil(unscaley(mousepoz[1])));
+					  .text("n= " + Math.ceil(ntool));
 					
 					
 					  
