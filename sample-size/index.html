@@ -206,6 +206,15 @@ var lineData;
 
 var type1, power, trialtype;
 
+	var npt = 100;
+	var prob = [];
+	var size = [];
+	for(k=0.1*npt; k <= 0.9*npt; k++){
+	  prob.push(k/npt);
+		size.push(0);
+	}
+
+
 function transpose(a)
 {
   return Object.keys(a[0]).map(function (c) { return a.map(function (r) { return r[c]; }); });
@@ -227,6 +236,8 @@ function checknan(p){
 		d3.select("#wtext").text("Warning: some values above p=0.5 produce imaginary numbers")
 	}
 }
+
+
 function draw(){
 
 
@@ -261,7 +272,7 @@ if(d > 1){
 //d = 0.5;
 //delta = 0.5;
 
-	
+// Calculate top and bottom of sliders
 EXmin = Math.floor(100*0.5*EX)/100;
 EXmax = Math.floor(100*1.5*EX)/100;
 dmin = Math.floor(1000*0.5*d)/1000;
@@ -270,30 +281,19 @@ dmax = Math.min(dmax, 1);
 deltamin = Math.floor(1000*0.5*delta)/1000;
 deltamax = Math.floor(1000*1.5*delta)/1000;	
 
-prob = [];
-size = [];
-usize = [];
-
 	
-
-npt = 100;
-for(k=0.1*npt; k <= 0.9*npt; k++){
-  prob.push(k/npt);
+for(k=0; k < prob.length; k++){
   if(trialtype=="noninf"){
-	  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
 	}else{
-		size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+	  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
 	}
 }
-for(k=0.1*npt; k <= 0.9*npt; k++){
-  //prob.push(k/npt);
-  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));    
-}
+
 p = transpose([prob, size]);
 //u = transpose([prob, usize]);
 
 checknan(p);
-smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
 ydomain = d3.extent(p, function(q){return q[1]});
 
@@ -335,6 +335,7 @@ var drawcoords = d3.svg.line()
 					.y(function(d) {return d[1]})
 					.interpolate("linear");
 
+// Draw the x-axis
 svg.append("g")
   .attr("class", "x axis")
   .attr("transform", "translate(0," + (height-2*padding) + ")")
@@ -346,6 +347,7 @@ svg.append("g")
 	.style("text-anchor", "middle")
   .text("Probability of Allocation to Experimental Group");
   
+// Draw the y-axis  
 svg.append("g")
         .attr("class", "y axis")
         .attr("transform", "translate(" + 3*padding + ",0)")
@@ -357,6 +359,7 @@ svg.append("g")
       .style("text-anchor", "end")
       .text("Subjects");
 
+// Draw the sample size curve
 var pathp = svg.append("path")
         .datum(p)
         .attr("class", "line")
@@ -364,19 +367,20 @@ var pathp = svg.append("path")
         .attr("id", "pooled")
         .attr("stroke", "blue")
         .on("mouseover", function() {
-                	//d3.select(this)
-                     //   .attr("stroke", "orange");
-                        
+
 					var mousepoz = d3.mouse(this);
 					
+					// Calculate probability for tool tip
 					var ptool = Math.ceil(100*unscalex(mousepoz[0]))/100
 					
+					// Place tool tip, set value for p
 					d3.select("#tooltip")
  					 .style("left", mousepoz[0]+5 + "px")
 					  .style("top", mousepoz[1]+30 + "px")
 					  .select("#pvalue")
 					  .text("p= " + ptool)
 
+					// Calculate sample size for tool tip
 					var ntool;
  					if(trialtype=="noninf"){
 						ntool = pooled(ptool, zbeta, zalpha, d, delta, EX);
@@ -384,22 +388,20 @@ var pathp = svg.append("path")
 						ntool = unpooled(ptool, zbeta, zalpha, d, delta, EX);
 					}
 
+					// Set sample size on tooltip
 					d3.select("#tooltip")
 					  .select("#nvalue")
 					  .text("n= " + Math.ceil(ntool));
 					
-					
-					  
 					//Show the tooltip
 					d3.select("#tooltip").classed("hidden", false);
 					
-					//lineData = [ { "x": 0,   "y": mousepoz[1]},
-					//  { "x": mousepoz[0],  "y": mousepoz[1]},
-                	//	{ "x": mousepoz[0],  "y": 0}];
+					// Calculate where to draw lines to axes
 					lineData = [ [ 3*padding,  mousepoz[1]],
 					  	[mousepoz[0],  mousepoz[1]],
                 		[ mousepoz[0], height-2*padding]];
 					
+					// Draw a line to the axes
 					svg.append("path")
 						.datum(lineData)
 						.attr("d", drawcoords(lineData))
@@ -410,8 +412,7 @@ var pathp = svg.append("path")
 					          
                 })
         .on("mouseout", function(d) {
-                //d3.select(this)
-                 //       .attr("stroke", "blue");
+				// Remove tooltip and lines to axes
                 d3.select("#tooltip").classed("hidden", true);
                 d3.select("#triangulate").remove();
 
@@ -454,41 +455,40 @@ d3.select('#sliderdelta')
 			.step(0.001)
 			.value(delta)
 			.on("slide", function(evt, value) {
+		// Set the slider text to match the slider
       d3.select('#sliderdeltatext').text(Math.floor(value*1000)/1000);
+      // Remove the warning, may appear later
 	d3.select("#warning").style("display", "none");
-
+	
+	// Round the margin
 	delta = Math.floor(value*1000)/1000; //0.02;
-	npt = 100;
-	prob = [];
-	size = [];
-	usize = [];
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  prob.push(k/npt);
-	  if(trialtype=="noninf"){
-		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	
+	// Recalculate the sample sizes
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}else{
-			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}
 	}
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
-	}
+
 	p = transpose([prob, size]);
-	//u = transpose([prob, usize]);
-smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
+// get the new range of sample sizes and reset the scale for y
 ydomain = d3.extent(p, function(q){return q[1]});
-
 scaley.domain(ydomain);
-
 unscaley.range(ydomain);
 
+// Transition the path to the new place
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
 
+// Change the text box with the margin to match what's on the slider
 document.getElementById("delta").value = delta;
 
-//pathu.datum(u).transition().duration(500).attr("d", line);
+// Check to see if curve goes imaginary, if it does, display
 checknan(p);
+
+// Transition the y axis
 svg.select(".y.axis")
     .transition()
     .duration(500)
@@ -506,40 +506,40 @@ d3.select('#sliderd')
 			.step(0.001)
 			.value(d)
 			.on("slide", function(evt, value) {
+					// Set the slider text
       d3.select('#sliderdtext').text(Math.floor(value*1000)/1000);
+    // Remove the warning at the beginning of each move (may be displayed later)
 	d3.select("#warning").style("display", "none");
-	d = Math.floor(value*1000)/1000; //0.02;
-	npt = 100;
-	prob = [];
-	size = [];
-	usize = [];
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  prob.push(k/npt);
-	  if(trialtype=="noninf"){
-		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	// Round the event probability
+	d = Math.floor(value*1000)/1000;
+	
+	// Recalculate all the sample sizes
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}else{
-			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}
 	}
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
-	}
+
 	p = transpose([prob, size]);
-	//u = transpose([prob, usize]);
-smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
 
+// get the new range of sample sizes and reset the scale for y
 ydomain = d3.extent(p, function(q){return q[1]});
-
 scaley.domain(ydomain);
-
 unscaley.range(ydomain);
 
+// Transition the path to the new place
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
-checknan(p);
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
+// Check to see if the curve goes imaginary.  If so, display a warning
+checknan(p);
+
+// Change the text box with event probability to match what's on the slider
 document.getElementById("eventprob").value = d;
 
+// Transition the y axis
 svg.select(".y.axis")
     .transition()
     .duration(500)
@@ -548,7 +548,10 @@ svg.select(".y.axis")
 }));
 
 
-
+/*
+*	If the EX slider is moved, then we recalculate everything and transition
+*	the y axis and the curve.
+*/
 d3.select('#sliderEX')
 	.call(
 		d3.slider()
@@ -559,42 +562,40 @@ d3.select('#sliderEX')
 			.value(EX)
 			
 			.on("slide", function(evt, value) {
+		// Set the slider text
       d3.select('#sliderEXtext').text(Math.floor(100*value)/100);
+      // Remove the warning at the beginning of each move (may be displayed later)
 	d3.select("#warning").style("display", "none");
 
+	// Recalculate all the sample sizes
 	EX = value;
-	npt = 100;
-	prob = [];
-	size = [];
-	usize = [];
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  prob.push(k/npt);
-	  if(trialtype=="noninf"){
-		  size.push(pooled(k/npt, zbeta, zalpha, d, delta, EX));
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}else{
-			size.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
 		}
 	}
-	for(k=0.1*npt; k <= 0.9*npt; k++){
-	  //usize.push(unpooled(k/npt, zbeta, zalpha, d, delta, EX));     
-	}
+
 	p = transpose([prob, size]);
-	//u = transpose([prob, usize]);
-smid = Math.ceil(unpooled(0.5, zbeta, zalpha, d, delta, EX));
+	
 
+// get the new range of sample sizes and reset the scale for y
 ydomain = d3.extent(p, function(q){return q[1]});
-
 scaley.domain(ydomain);
-
 unscaley.range(ydomain);
 
+// Transition the path to the new place
 pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
-
 //pathu.datum(u).transition().duration(500).attr("d", line);
 
+// Change the text box with followup time to match what's on the slider
 document.getElementById("followup").value = Math.floor(100*EX)/100;
 
+// Check to see if the curve goes imaginary.  If so, display a warning
 checknan(p);
+
+// Transition the y axis
 svg.select(".y.axis")
     .transition()
     .duration(500)
