@@ -17,6 +17,7 @@ background-color:'black'
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="http://mbostock.github.com/stack/stack.v0.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="lasso-tool.js"></script>
 <script src="point-in-polygon.js"></script>
 <script src="highlight.v0.js"></script>
 
@@ -148,7 +149,7 @@ background-color:'black'
         .attr("class", function (d) { return d['d.id']; });
     }
 </script>
-<script src="lasso-tool.js"></script>
+
 <script type="text/javascript"> 
     $("#heatmap")
       .lasso()
