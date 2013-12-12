@@ -3,22 +3,44 @@
 <style>
 
 /* CSS goes here. */
+#tooltip {
+        position: absolute;
+        width: auto;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+}
+
+#tooltip.hidden {
+        display: none;
+}
+
+#tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 20px;
+}
 
 </style>
 <body>
 
-    
+<div id="tooltip" class="hidden">
+        <p><span id="pvalue">100</span></p>
+        <p><span id="nvalue">100</span></p>
+</div>
+
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-
-
- 
 <script>
-
-var svg;
-
-
-
+var svg, svg2;
 
 d3.xml("cars.svg", "image/svg+xml", function(xml) {
   svg = document.body.appendChild(xml.documentElement);
@@ -29,13 +51,31 @@ d3.xml("gnp.svg", "image/svg+xml", function(xml) {
 });
 
 
-</script>
+var out;
+d3.json("cars.json", function(d) {
+  out = d3.select(svg).select(".points").selectAll("use").data(d)
+  out.attr('fill-opacity', function(d) {return d[0].speed/25})
+  out.on("mouseover", function(d) {
 
-<script> ourdata= [[{"speed":4,"dist":2}],[{"speed":4,"dist":10}],[{"speed":7,"dist":4}],[{"speed":7,"dist":22}],[{"speed":8,"dist":16}],[{"speed":9,"dist":10}],[{"speed":10,"dist":18}],[{"speed":10,"dist":26}],[{"speed":10,"dist":34}],[{"speed":11,"dist":17}],[{"speed":11,"dist":28}],[{"speed":12,"dist":14}],[{"speed":12,"dist":20}],[{"speed":12,"dist":24}],[{"speed":12,"dist":28}],[{"speed":13,"dist":26}],[{"speed":13,"dist":34}],[{"speed":13,"dist":34}],[{"speed":13,"dist":46}],[{"speed":14,"dist":26}],[{"speed":14,"dist":36}],[{"speed":14,"dist":60}],[{"speed":14,"dist":80}],[{"speed":15,"dist":20}],[{"speed":15,"dist":26}],[{"speed":15,"dist":54}],[{"speed":16,"dist":32}],[{"speed":16,"dist":40}],[{"speed":17,"dist":32}],[{"speed":17,"dist":40}],[{"speed":17,"dist":50}],[{"speed":18,"dist":42}],[{"speed":18,"dist":56}],[{"speed":18,"dist":76}],[{"speed":18,"dist":84}],[{"speed":19,"dist":36}],[{"speed":19,"dist":46}],[{"speed":19,"dist":68}],[{"speed":20,"dist":32}],[{"speed":20,"dist":48}],[{"speed":20,"dist":52}],[{"speed":20,"dist":56}],[{"speed":20,"dist":64}],[{"speed":22,"dist":66}],[{"speed":23,"dist":54}],[{"speed":24,"dist":70}],[{"speed":24,"dist":92}],[{"speed":24,"dist":93}],[{"speed":24,"dist":120}],[{"speed":25,"dist":85}]] </script>
-<script> dataToBind =  d3.entries(ourdata.map(function(d,i) {return d[0]})) </script>
-<script>
- scatterPoints = d3.select(".points").selectAll("use");
- scatterPoints.data(dataToBind)
-</script>
+					var mousepoz = d3.mouse(this);
+					
+					// Calculate probability for tool tip
+					var ptool = d[0].dist
+					
+					// Place tool tip, set value for p
+					d3.select("#tooltip")
+ 					 .style("left", mousepoz[0] + "px")
+					 .style("bottom", mousepoz[1]-200 + "px")
+					 .select("#pvalue")
+					 .text("x= " + ptool);
+					  
+					d3.select("#tooltip").classed("hidden", false); 
+					  })
+  .on("mouseout", function(d) {
+                d3.select("#tooltip").classed("hidden", true);
+                });
 
+
+});
+</script>
 </body>
