@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.css" /> 
+<style>
+
+/* CSS goes here. */
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
+.line {
+  fill: none;
+
+  stroke-width: 3px;
+}
+
+
+body {
+  font-family: Verdana,Arial,sans-serif;
+}
+
+h2 {
+    font-size: 1.2em;
+    margin: 60px 0 5px 0;
+}
+
+.wrapper div {
+    margin: 10px 0;
+}
+
+.wrapper {
+  width: 250px; 
+  margin-left: 0px;
+  margin-right: auto;
+}
+
+#slider7 {
+    height: 250px;
+}
+
+#topbar {
+	float:left;
+   width:1150px;
+   margin-left: 10px;
+   margin-right: 0px;
+}
+#left_col {
+   float:left;
+   width:900px;
+   height:450px;
+}
+#right_col {
+   float:right;
+   width:250px;
+   height:450px;
+}
+
+
+#tooltip {
+        position: absolute;
+        width: auto;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+}
+
+#tooltip.hidden {
+        display: none;
+}
+
+#tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 20px;
+}
+#warning{
+	display:none;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+#type1menu{
+	width:125px;
+	float:left;
+}
+
+#powermenu{
+	width:125px;
+	float:right;
+}
+</style>
+<body>
+<div id="header">
+<h1 style="margin-bottom:10">Sample Size Calculator for Additive Hazards Model</h1></div>
+
+
+<div id="container" style="width:1150px">
+
+<div id="tooltip" class="hidden">
+        <p><span id="pvalue">100</span></p>
+        <p><span id="nvalue">100</span></p>
+</div>
+
+<div id="topbar">
+
+  Margin or Hazard Difference: <input type="text" name="delta" id="delta">
+  Event Probability: <input type="text" name="eventprob" id="eventprob">
+  Expected Follow-up Time: <input type="text" name="followup" id="followup">
+</div>
+<div id="right_col">
+
+<div id="type1menu" style="float:left" "width:125px">
+Type 1 Error: <form action="">
+<select name="type1" id="type1">
+<option value=2.326348>0.01</option>
+<option value=1.959964 selected>0.025</option>
+<option value=1.644854>0.05</option>
+<option value=1.281552>0.1</option>
+</select>
+</form>
+</div>
+
+<div id="powermenu" style="float:right" style="width:125px">
+Power:
+<form action="">
+<select name="power" id="power">
+<option value=0.8416212>0.8</option>
+<option value=1.281552 selected>0.9</option>
+<option value=1.644854>0.95</option>
+</select>
+</form>
+<br>
+</div>
+
+<div id="trialmenu"  style="width:250px">
+Trial Type:
+<form action="">
+<select name="trial" id="trial">
+<option value="noninf" selected>Non-Inferiority</option>
+<option value="sup">Superiority</option>
+</select>
+</form>
+</div>
+<div style="margin:10px 0px 5px">
+  <input type="button" value="Calculate" name="subbutton" onclick="draw()">
+</div>
+<div class="wrapper">
+<br>
+  Margin or Difference: <span id="sliderdeltatext"></span>
+  <div id="sliderdelta"></div>
+</div>
+
+<div class="wrapper">
+  Event Probability: <span id="sliderdtext"></span>
+  <div id="sliderd"></div>
+</div>
+
+<div class="wrapper">
+  Expected Follow-up: <span id="sliderEXtext"></span>
+  <div id="sliderEX"></div>
+</div>
+</div>
+
+<div id="left_col"></div>
+
+<div id="warning">
+ <p><textarea rows="2" cols="100" id="wtext"></textarea></p>
+</div>
+
+
+</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.js"></script>
+<script>
+
+/* JavaScript goes here. */
+
+var width = 900,
+    height = 450,
+    padding = 20;
+
+var svg = d3.select("#left_col").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var d, dd;
+
+var lineData;
+
+var type1, power, trialtype;
+
+	var npt = 100;
+	var prob = [];
+	var size = [];
+	for(k=0.1*npt; k <= 0.9*npt; k++){
+	  prob.push(k/npt);
+		size.push(0);
+	}
+
+
+function transpose(a)
+{
+  return Object.keys(a[0]).map(function (c) { return a.map(function (r) { return r[c]; }); });
+}
+
+function pooled(p, zbeta, zalpha, d, delta, EX){
+  return (d*Math.pow(zbeta,2) + (Math.pow(zalpha,2)*(d+delta*EX*(1-2*p)) 
+  			+ 2*zalpha*zbeta*Math.sqrt(d)*Math.sqrt(d+delta*EX*(1-2*p))))
+  			/(p*(1-p)*Math.pow(delta*EX,2));
+}
+
+function unpooled(p, zbeta, zalpha, d, delta, EX){
+  return (d*Math.pow(zbeta+zalpha,2) )/(p*(1-p)*Math.pow(delta*EX,2));
+}
+
+function checknan(p){
+	if(isNaN(p[p.length-1][1])){
+		d3.select("#warning").style("display", "inline");
+		d3.select("#wtext").text("Warning: some values above p=0.5 produce imaginary numbers")
+	}
+}
+
+
+function draw(){
+
+
+d3.selectAll("path").remove();
+d3.selectAll("circle").remove();
+d3.selectAll("text").remove();
+d3.selectAll("g").remove();
+d3.selectAll("a").remove();
+d3.select("#warning").style("display", "none");
+
+d3.select('#left_col')
+	.call( function(){
+	delta = parseFloat(document.getElementById("delta").value);
+	d = parseFloat(document.getElementById("eventprob").value);
+	EX = parseFloat(document.getElementById("followup").value);
+
+
+zalpha = parseFloat(document.getElementById("type1").value);
+zbeta = parseFloat(document.getElementById("power").value);
+
+trialtype = document.getElementById("trial").value;
+
+if(d > 1){
+	d3.select("#warning").style("display", "inline");
+	d3.select("#wtext").text("Warning: Event Probability must be between 0 and 1, setting equal to 1");
+	d = 1;
+}
+
+
+// FOR TESTING, COMMENT OUT!!!	
+//	EX = 0.5;
+//d = 0.5;
+//delta = 0.5;
+
+// Calculate top and bottom of sliders
+EXmin = Math.floor(100*0.5*EX)/100;
+EXmax = Math.floor(100*1.5*EX)/100;
+dmin = Math.floor(1000*0.5*d)/1000;
+dmax = Math.floor(1000*1.5*d)/1000;
+dmax = Math.min(dmax, 1);
+deltamin = Math.floor(1000*0.5*delta)/1000;
+deltamax = Math.floor(1000*1.5*delta)/1000;	
+
+	
+for(k=0; k < prob.length; k++){
+  if(trialtype=="noninf"){
+	  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
+	}else{
+	  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
+	}
+}
+
+p = transpose([prob, size]);
+//u = transpose([prob, usize]);
+
+checknan(p);
+
+ydomain = d3.extent(p, function(q){return q[1]});
+
+d3.select("#sliderdtext").text(d);
+d3.select("#sliderdeltatext").text(delta);
+d3.select("#sliderEXtext").text(EX);
+
+var scalex = d3.scale.linear()
+                          .domain([0, 1])
+                          .range([3*padding, width-3*padding]);
+
+var scaley = d3.scale.linear()
+                          .domain(ydomain)
+                          .range([height-3*padding, 1*padding]);
+
+var unscalex = d3.scale.linear()
+                          .range([0, 1])
+                          .domain([3*padding, width-3*padding]);
+
+var unscaley = d3.scale.linear()
+                          .range(ydomain)
+                          .domain([height-3*padding, 1*padding]);
+                          
+var xAxis = d3.svg.axis()
+                          .scale(scalex)
+                          .orient("bottom");
+                          
+var yAxis = d3.svg.axis()
+                          .scale(scaley)
+                          .orient("left")
+                          .ticks(5);
+
+var line = d3.svg.line()
+                    .x(function(d) { return scalex(d[0]); })
+                    .y(function(d) { return scaley(d[1]); })
+                    .interpolate("linear");
+var drawcoords = d3.svg.line()
+					.x(function(d) {return d[0]})
+					.y(function(d) {return d[1]})
+					.interpolate("linear");
+
+// Draw the x-axis
+svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + (height-2*padding) + ")")
+  .call(xAxis)
+  .append("text")
+  .attr("x", 750)
+  .attr("y", 35)
+  .attr("dx", ".71em")
+	.style("text-anchor", "middle")
+  .text("Probability of Allocation to Experimental Group");
+  
+// Draw the y-axis  
+svg.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + 3*padding + ",0)")
+        .call(yAxis)
+            .append("text")
+      //.attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Subjects");
+
+// Draw the sample size curve
+var pathp = svg.append("path")
+        .datum(p)
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("id", "pooled")
+        .attr("stroke", "black")
+        .on("mouseover", function() {
+
+					var mousepoz = d3.mouse(this);
+					
+					// Calculate probability for tool tip
+					var ptool = Math.ceil(100*unscalex(mousepoz[0]))/100
+					
+					// Place tool tip, set value for p
+					d3.select("#tooltip")
+ 					 .style("left", mousepoz[0]+5 + "px")
+					  .style("top", mousepoz[1]+30 + "px")
+					  .select("#pvalue")
+					  .text("p= " + ptool)
+
+					// Calculate sample size for tool tip
+					var ntool;
+ 					if(trialtype=="noninf"){
+						ntool = pooled(ptool, zbeta, zalpha, d, delta, EX);
+					}else{
+						ntool = unpooled(ptool, zbeta, zalpha, d, delta, EX);
+					}
+
+					// Set sample size on tooltip
+					d3.select("#tooltip")
+					  .select("#nvalue")
+					  .text("n= " + Math.ceil(ntool));
+					
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);
+					
+					// Calculate where to draw lines to axes
+					lineData = [ [ 3*padding,  mousepoz[1]],
+					  	[mousepoz[0],  mousepoz[1]],
+                		[ mousepoz[0], height-2*padding]];
+					
+					// Draw a line to the axes
+					svg.append("path")
+						.datum(lineData)
+						.attr("d", drawcoords(lineData))
+						.attr("stroke", "black")
+						.attr("stroke-width", 1)
+						.attr("fill", "none")
+						.attr("id", "triangulate");					
+					          
+                })
+        .on("mouseout", function(d) {
+				// Remove tooltip and lines to axes
+                d3.select("#tooltip").classed("hidden", true);
+                d3.select("#triangulate").remove();
+
+                });
+/*    
+var pathu = svg.append("path")
+        .datum(u)
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("id", "unpooled")
+        .attr("stroke", "blue")
+        .on("mouseover", function() {
+                	d3.select(this)
+                        .attr("stroke", "orange");
+					var mousepoz = d3.mouse(this);
+					
+					d3.select("#tooltip")
+ 					 .style("left", mousepoz[0] + "px")
+					  .style("top", mousepoz[1]-10 + "px")
+					  .select("#value")
+					  .text(Math.ceil(100*unscalex(mousepoz[0]))/100 + ", " + Math.ceil(unscaley(mousepoz[1])));
+
+					//Show the tooltip
+					d3.select("#tooltip").classed("hidden", false);          
+                })
+        .on("mouseout", function(d) {
+                d3.select(this)
+                        .attr("stroke", "blue");
+                d3.select("#tooltip").classed("hidden", true);
+                
+});
+*/                        
+
+d3.select('#sliderdelta')
+	.call( delslide = d3.slider()
+			//.axis(true)
+			.min(deltamin)
+			.max(deltamax)
+			//.orientation("vertical")
+			.step(0.001)
+			.value(delta)
+			.on("slide", function(evt, value) {
+		// Set the slider text to match the slider
+      d3.select('#sliderdeltatext').text(Math.floor(value*1000)/1000);
+      // Remove the warning, may appear later
+	d3.select("#warning").style("display", "none");
+	
+	// Round the margin
+	delta = Math.floor(value*1000)/1000; //0.02;
+	
+	// Recalculate the sample sizes
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}else{
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}
+	}
+
+	p = transpose([prob, size]);
+
+// get the new range of sample sizes and reset the scale for y
+ydomain = d3.extent(p, function(q){return q[1]});
+scaley.domain(ydomain);
+unscaley.range(ydomain);
+
+// Transition the path to the new place
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
+
+// Change the text box with the margin to match what's on the slider
+document.getElementById("delta").value = delta;
+
+// Check to see if curve goes imaginary, if it does, display
+checknan(p);
+
+// Transition the y axis
+svg.select(".y.axis")
+    .transition()
+    .duration(500)
+    .call(yAxis);    	
+
+}));
+
+
+
+d3.select('#sliderd')
+	.call(d3.slider()
+			//.axis(true)
+			.min(dmin)
+			.max(dmax)
+			.step(0.001)
+			.value(d)
+			.on("slide", function(evt, value) {
+					// Set the slider text
+      d3.select('#sliderdtext').text(Math.floor(value*1000)/1000);
+    // Remove the warning at the beginning of each move (may be displayed later)
+	d3.select("#warning").style("display", "none");
+	// Round the event probability
+	d = Math.floor(value*1000)/1000;
+	
+	// Recalculate all the sample sizes
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}else{
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}
+	}
+
+	p = transpose([prob, size]);
+
+// get the new range of sample sizes and reset the scale for y
+ydomain = d3.extent(p, function(q){return q[1]});
+scaley.domain(ydomain);
+unscaley.range(ydomain);
+
+// Transition the path to the new place
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
+//pathu.datum(u).transition().duration(500).attr("d", line);
+
+// Check to see if the curve goes imaginary.  If so, display a warning
+checknan(p);
+
+// Change the text box with event probability to match what's on the slider
+document.getElementById("eventprob").value = d;
+
+// Transition the y axis
+svg.select(".y.axis")
+    .transition()
+    .duration(500)
+    .call(yAxis);    	
+
+}));
+
+
+/*
+*	If the EX slider is moved, then we recalculate everything and transition
+*	the y axis and the curve.
+*/
+d3.select('#sliderEX')
+	.call(
+		d3.slider()
+			//.axis(true)
+			.min(EXmin)
+			.max(EXmax)
+			.step(0.001)
+			.value(EX)
+			
+			.on("slide", function(evt, value) {
+		// Set the slider text
+      d3.select('#sliderEXtext').text(Math.floor(100*value)/100);
+      // Remove the warning at the beginning of each move (may be displayed later)
+	d3.select("#warning").style("display", "none");
+
+	// Recalculate all the sample sizes
+	EX = value;
+	for(k=0; k < prob.length; k++){
+  		if(trialtype=="noninf"){
+		  size[k] = pooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}else{
+		  size[k] = unpooled(prob[k], zbeta, zalpha, d, delta, EX);
+		}
+	}
+
+	p = transpose([prob, size]);
+	
+
+// get the new range of sample sizes and reset the scale for y
+ydomain = d3.extent(p, function(q){return q[1]});
+scaley.domain(ydomain);
+unscaley.range(ydomain);
+
+// Transition the path to the new place
+pathp.datum(p).transition().duration(500).ease("linear").attr("d", line);
+//pathu.datum(u).transition().duration(500).attr("d", line);
+
+// Change the text box with followup time to match what's on the slider
+document.getElementById("followup").value = Math.floor(100*EX)/100;
+
+// Check to see if the curve goes imaginary.  If so, display a warning
+checknan(p);
+
+// Transition the y axis
+svg.select(".y.axis")
+    .transition()
+    .duration(500)
+    .call(yAxis);    	
+
+}));
+
+});
+
+}
+
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46223110-1', 'wisc.edu');
+  ga('send', 'pageview');
+
+</script>
