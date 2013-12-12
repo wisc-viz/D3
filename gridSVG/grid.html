@@ -23,7 +23,10 @@ var svg;
 d3.xml("cars.svg", "image/svg+xml", function(xml) {
   svg = document.body.appendChild(xml.documentElement);
 });
-/* JavaScript goes here. */
+
+d3.xml("gnp.svg", "image/svg+xml", function(xml) {
+  svg2 = document.body.appendChild(xml.documentElement);
+});
 
 
 </script>
@@ -34,9 +37,5 @@ d3.xml("cars.svg", "image/svg+xml", function(xml) {
  scatterPoints = d3.select(".points").selectAll("use");
  scatterPoints.data(dataToBind)
 </script>
-
-<script src="cars.svg.coords.js"></script>
-<script src="cars.svg.mappings.js"></script>
-<script src="cars.svg.utils.js"></script>
 
 </body>
