@@ -10,5 +10,40 @@
 <script>
 
 /* JavaScript goes here. */
+var beaches
+
+var height=400;
+var width=400;
+
+/* add a blank svg image to the page */
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+
+var scale_color = d3.scale.linear().domain([0,1000]).range(['blue','red'])
+
+/* load the data and plot it */
+d3.csv("data/beaches.csv", function(d) {
+  beaches = d;
+  
+      svg.selectAll("g").data(beaches).enter().append('g')
+        .selectAll("rect").data( function(object, rowNum) {
+            var newArray = [];
+            for (var key in object) {
+                if (key != 'Beach') {
+                  newArray.push(object[key]);
+                }
+            }
+            return newArray;
+          })
+          .enter()
+          .append("rect")
+          .attr("width", 10)
+          .attr("height", 10)
+          .attr('x', function(x, i) {return 11 * i})
+          .attr('y', function(x) { console.log(x) })
+          .attr('fill', function(x) {return scale_color(x)})
+  
+})
 
 </script>
