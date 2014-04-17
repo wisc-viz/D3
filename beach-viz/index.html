@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<style>
+.water { fill: #66B2FF; }
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.lake-label {
+  font-family: sans-serif;
+  font-size: 0.55em;
+  fill: white;
+  text-anchor: middle;
+}
+</style>
+
+<body>
+
+<svg id="beach-viz"></svg>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+
+<script>
+var width = 600,
+    height = 720;
+    
+var margin = {top: 0, right: 0, bottom: 0, left: 0},
+    wellmargin = 7,
+    width = width - margin.left - margin.right,
+    height = height - margin.top - margin.bottom;
+    
+var wellheight = 160,
+    wellwidth = 320,
+    maxscale = 50;
+   
+var svg = d3.select("#beach-viz")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+//annual scale:
+var wellscale = d3.time.scale()
+    .domain([new Date(1996, 0, 0), new Date(2014, 0, 0)])
+    .range([0, wellwidth]);
+    
+var xAxis = d3.svg.axis()
+    .scale(wellscale)
+    .ticks(d3.time.year, 1);
+    
+var yScale = d3.scale.linear()
+    .domain([0,maxscale])
+    .range([0,wellheight]);
+
+var label = {
+    'Lake Mendota': {'offset':[0,-10], 'anchor':'middle'},
+    'Marshall': {'offset':[10,0], 'anchor':'start'},
+    'Spring Harbor': {'offset':[-10,25], 'anchor':'start'},
+    'Warner Park': {'offset':[12,10], 'anchor':'start'},
+    'Tenney Park': {'offset':[-10,-3], 'anchor':'end'},
+    'James Madison': {'offset':[-12,-3], 'anchor':'end'},
+    'Vilas': {'offset':[-28,-8], 'anchor':'middle'},
+    'Brittingham': {'offset':[8,-8], 'anchor':'end'},
+    'Bernies': {'offset':[-10,18], 'anchor':'middle'},
+    'Olin': {'offset':[0,25], 'anchor':'middle'},
+    'Esther': {'offset':[10,16], 'anchor':'start'},
+    'BB Clarke': {'offset':[12,10], 'anchor':'start'},
+    'Hudson': {'offset':[5,-15], 'anchor':'start'},
+    'Olbrich': {'offset':[10,-5], 'anchor':'start'},
+    'Goodland': {'offset':[-8,-8], 'anchor':'end'}
+};
+    
+    
+svg.append('rect')
+  .attr("width", width)
+  .attr("height", height)
+  .attr("fill", "#ddc");
+  
+
+var lakes, beach_location, barchart, days=200;
+    
+var barheight_scale = d3.scale.linear()
+    .domain([0, maxscale])
+    .range([0, wellheight]);
+
+var proj = d3.geo.conicConformal()
+    .rotate([89.395, 0])
+    .center([0, 43.067])
+    .parallels([43, 43.2])
+    .scale(220000)
+    .translate([width / 2, height / 2]);
+
+
+queue()
+    .defer(d3.json, 'lakes.json')
+    .defer(d3.tsv, 'beach-location.tsv')
+    .defer(d3.csv, 'closures.csv')
+    .await(MakeMap); // function that uses files
+
+function MakeMap(err, lakes, beaches, closures) {
+    svg.selectAll(".water")
+        .data(lakes.features)
+        .enter()
+        .append("path")
+            .attr("d", d3.geo.path().projection(proj))
+            .attr("class", function(d) { return "water"; });
+
+    svg.append("text")
+        .attr('transform', 'translate(240,205)')
+        .attr('class', 'lake-label')
+        .text('M E N D O T A');
+        
+        
+    svg.append("text")
+        .attr('transform', 'translate(228,420)')
+        .attr('class', 'lake-label')
+        .text('W I N G R A');
+        
+    svg.append("text")
+        .attr('transform', 'translate(385,360)')
+        .attr('class', 'lake-label')
+        .text('M O N O N A');
+            
+            
+    svg.append("text")
+        .attr('transform', 'translate(512,560)')
+        .attr('class', 'lake-label')
+        .text('W A U B E S A');
+
+    //Get the coordinates of each beach
+    beach_location = {}
+    for (k in beaches) {
+        beach_location[beaches[k].Beach] = [beaches[k].Longitude, beaches[k].Latitude];
+    }
+
+    //Find how many total closures occured at each beach, and extract the annual closures for each beach:
+    tot_closures = [];
+    beach_closures = {};
+    for (j in closures) {
+        var row = closures[j];
+        if (row.Beach != 'TOTAL') {
+            tot_closures.push({'beach':row.Beach, 'location':beach_location[row.Beach], 'closures':row.TOTAL});
+        }
+        
+        //beach_record is a single beach's data, covering 1996-2013
+        var beach_record = [];
+        for (k in row) {
+            if (k != 'Beach' && k != 'TOTAL') {
+                beach_record.push({'year':k, 'closures':row[k]});
+            }
+        }
+        beach_closures[row.Beach] = beach_record;
+    }
+    
+    //Get the maximum number of closures for any beach:
+    var max_closures = d3.max((function (x) {
+        r = [];
+        for (j in x) {r.push(x[j].closures);}
+        return r;
+    })(tot_closures))    ;
+    
+    //Scale the dots so their area indicates the total closures
+    var radius_scale = d3.scale.sqrt()
+    .domain([0, max_closures])
+    .range([0, 10]);
+    
+    //Make the well where we'll put barcharts:
+    barchart = svg.append("g")
+        .attr('transform', 'translate(' + wellmargin + ',' + (height * 0.84 - wellheight) + ")")
+        .attr('height', wellheight)
+        .attr('width', wellwidth)
+        .attr('id', 'barchart-well')
+        
+    //Add an x-axis to the well to show the closures by year
+    barchart.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + wellheight + ")")
+        .call(xAxis)
+        .selectAll("text")
+            .attr("y", -5)
+            .attr("x", 10)
+            .attr("dy", ".45em")
+            .attr("transform", "rotate(70)")
+            .style("text-anchor", "start")
+            .attr('font-family', 'sans-serif');
+    
+    //Generate the default title for the well
+    barchart.append('text')
+        .attr('font-family', 'sans-serif')
+        .attr('width', 'well-width')
+        .attr('text-anchor', 'middle')
+        .attr('x', wellwidth/2)
+        .attr('y', wellheight + 53)
+        .attr('font-size', 16)
+        .attr('font-weight', 'bold')
+        .attr('id', 'well-label')
+        .text("Mouse over a beach for details");
+    
+    //Draw a circle at each beach:
+    svg.selectAll('circle')
+        .data(tot_closures)
+        .enter()
+        .append('circle')
+            .attr('r', function(x) {return radius_scale(x.closures)})
+            .attr('cx', function(x) {return proj(x.location)[0]})
+            .attr('cy', function(x) {return proj(x.location)[1]})
+            .attr('fill', '#DE3E04')
+            .on('mouseover', function(x,i) {
+                var beach = this.__data__.beach;
+                var barmargin = 4;
+                var barwidth = wellwidth / (wellscale.domain()[1].getYear() - wellscale.domain()[0].getYear()) - barmargin
+                
+                //Draw the dynamic well title
+                svg.select("#well-label")
+                    .text("Days closed at " + x.beach);
+                    
+                var well_rect = svg.select("#barchart-well")
+                    .selectAll('.barchart-bar')
+                    .data(beach_closures[beach], function(d, i) {return d.year})
+                    
+                var well_text = svg.select("#barchart-well")
+                    .selectAll('.bar-label')
+                    .data(beach_closures[beach], function(d, i) {return d.year})
+                    
+                well_rect.exit()
+                    .transition()
+                        .attr('y', function(x) {return wellheight})
+                        .attr('height', 0)
+                        .remove();
+                
+                well_text.exit()
+                    .text(function(d) {return d.closures})
+                    .transition()
+                        .attr('y', function(x) {return wellheight})
+                        .remove();
+                    
+                well_rect.enter()
+                    .append('rect')
+                        .attr('x', function(x, i) {return i * (barwidth + barmargin) + barmargin/2})
+                        .attr('width', barwidth)
+                        .attr('y', function(x) {return wellheight})
+                        .attr('height', 0)
+                        .attr('class', 'barchart-bar')
+                        .attr('fill', '#DE3E04')
+                        .transition()
+                            .attr('y', function(x) {return wellheight - barheight_scale(x.closures)})
+                            .attr('height', function(x) {return barheight_scale(x.closures)});
+                            
+                well_text.enter()
+                    .append('text')
+                        .attr('x', function(x, i) {return i * (barwidth + barmargin) + (barwidth + barmargin)/2})
+                        .attr('y', function(x) {return wellheight - 3})
+                        .attr('class', 'bar-label')
+                        .attr('font-family', 'sans-serif')
+                        .attr('font-size', 12)
+                        .attr('text-anchor', 'middle')
+                        .text(function(d) {return d.closures})
+                        .transition()
+                            .attr('y', function(x) {return wellheight - barheight_scale(x.closures)})
+                
+                well_rect
+                    .transition()
+                        .attr('y', function(x) {return wellheight - barheight_scale(x.closures)})
+                        .attr('height', function(x) {return barheight_scale(x.closures)});
+                        
+                well_text
+                    .text(function(d) {return d.closures})
+                    .transition()
+                        .attr('y', function(x) {return wellheight - barheight_scale(x.closures) - 3})
+                        
+                
+            });
+    
+    
+    //Label the beaches:
+    svg.selectAll(".place-label")
+        .data(tot_closures)
+        .enter()
+        .append("text")
+            .attr("transform", function(d) { return "translate(" + proj(d.location) + ")"; })
+            .attr("class", "place-label")
+            .attr('font-family', 'sans-serif')
+            .attr('font-size', 13)
+            .text(function(d) { return d.beach; });
+    
+    //Beach label locations are defined by the 'label' object
+    svg.selectAll(".place-label")
+        .attr("x", function(d) { return label[d.beach].offset[0]; })
+        .attr("y", function(d) { return label[d.beach].offset[1]; })
+        .attr("text-anchor", function(d) { return label[d.beach].anchor });
+        
+    
+    //Define styling for the title
+    svg.append('text')
+        .attr('transform', 'translate(' + 15 + ',' + 3 + ')')
+        .attr("font-family", 'sans-serif')
+        .attr('font-size', 24)
+        .attr('font-weight', 'bold')
+        .attr('text-anchor', 'start')
+        .attr('id', 'title');
+    
+    //Put the title on the chart
+    svg.select('#title')
+        .append('tspan')
+            .attr('dy', "1.2em")
+            .attr('x', 0)
+            .text('Beach closures at the Yahara lakes')
+        
+    //Put the subtitle on the chart
+    svg.select('#title')
+        .append('tspan')
+            .attr('font-size', 12)
+            .attr('font-weight', 'normal')
+            .attr('dy', "1.5em")
+            .attr('x', 0)
+            .text('Dot size indicates the total number of closures, 1996 - 2013')
+        
+    //Put the footer on the chart
+    svg.append('text')
+        .attr("font-family", "sans-serif")
+        .attr('font-size', 9)
+        .attr('id', 'footer')
+        .attr('transform', 'translate(5, ' + (height-48) + ')')
+        .append('tspan')
+            .attr('dy', "1.1em")
+            .attr('x', 0)
+            .text('Source: Madison and Dane County Public Health.');
+
+    //Second line of the footer
+    svg.select('#footer')    
+        .append('tspan')
+        .attr('dy', "1.1em")
+        .attr('x', 0)
+        .text('Note: Totals are approximate, because data recording methods may have varied over the years.');
+        
+    //Third line of the footer
+    svg.select('#footer')
+        .append('tspan')
+        .attr('dy', "1.1em")
+        .attr('x', 0)
+        .text('Reporting: Kate Golden/Wisconsin Center for Investigative Journalism. Visualization: Wesley Brooks.');
+        
+}
+</script>
+</body>
